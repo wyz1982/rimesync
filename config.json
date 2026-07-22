@@ -1,0 +1,12 @@
+{
+  "sync_dir": "/var/webdav/rime/sync",
+  "dist_dir": "/var/webdav/rime/sync/dist",
+  "opencode_bin": "opencode",
+  "backup_dir": "/var/webdav/rime/backups",
+  "dict_names": ["rime_ice", "luna_pinyin", "custom_phrase"],
+  "rules": {
+    "min_freq_threshold": 1,
+    "weight_decay": 0.9,
+    "max_ai_batch_size": 30
+  }
+}

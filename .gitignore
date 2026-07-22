@@ -1,0 +1,20 @@
+# Python bytecode & cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Environment & IDE
+.venv/
+env/
+venv/
+ENV/
+.idea/
+.vscode/
+
+# Local test & temporary files
+backups/
+snapshots/
+sync/
+*.log
+*.tmp
