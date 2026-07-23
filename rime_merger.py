@@ -83,46 +83,72 @@ class RimeMerger:
     def get_incremental_entries(
         self,
         current_entries: Dict[Tuple[str, str], UserDbEntry],
-        snapshot_filepath: str
+        snapshot_filepath: str,
+        max_limit: int = 50,
+        skip_high_freq: int = 50
     ) -> List[UserDbEntry]:
         """
-        对比当前合并的词库与上一次的快照，获取新增与显著变动的增量条目（用于白天模式）
+        对比当前合并的词库与上一次的快照，获取真正的增量/异常词条（白天模式）
+        采用漏斗过滤：过滤单字、过滤超高频词
         """
         if not os.path.exists(snapshot_filepath):
-            # 无快照，默认返回所有新增词或前 N 条新词
-            return list(current_entries.values())
+            # 无快照，抽取最新且长度>=2、词频适中的候选词
+            candidates = [
+                e for e in current_entries.values()
+                if len(e.word) >= 2 and e.commit_count <= skip_high_freq
+            ]
+            return candidates[:max_limit]
 
         _, prev_entries = RimeParser.parse_file(snapshot_filepath)
         incremental: List[UserDbEntry] = []
 
         for key, entry in current_entries.items():
+            # 跳过单字
+            if len(entry.word) < 2:
+                continue
+
+            # 跳过超高频稳定词
+            if entry.commit_count > skip_high_freq:
+                continue
+
             if key not in prev_entries:
                 incremental.append(entry)
             else:
                 prev_entry = prev_entries[key]
-                # 若提交数显著增加（例如增加 2 次以上），也纳入增量调优
-                if entry.commit_count - prev_entry.commit_count >= 2:
+                # 提交次数有变化但词频不高，疑难变更
+                if entry.commit_count > prev_entry.commit_count:
                     incremental.append(entry)
+
+            if len(incremental) >= max_limit:
+                break
 
         return incremental
 
     def get_deep_candidates(
         self,
         current_entries: Dict[Tuple[str, str], UserDbEntry],
-        max_count: int = 100
+        max_limit: int = 50,
+        skip_high_freq: int = 50
     ) -> List[UserDbEntry]:
         """
-        抽取需要晚间深度调优的候选词条（优先处理低词频长词、可能存在的错别字或冲突词）
+        抽取需要晚间深度调优的疑难候选词条
+        规则：词长>=2，排除超高频已稳定词，优先抽取最近有提交或偶发低频多字词
         """
         candidates: List[UserDbEntry] = []
         for entry in current_entries.values():
-            # 候选条件：词长 >= 2，词频较高或极其可疑的低频词组
-            if len(entry.word) >= 2:
-                candidates.append(entry)
+            # 过滤单字
+            if len(entry.word) < 2:
+                continue
 
-        # 优先按时间戳倒序或低频疑难词排序
-        candidates.sort(key=lambda x: (x.last_commit_time == 0, -x.last_commit_time, x.commit_count))
-        return candidates[:max_count]
+            # 过滤超高频稳定词（高频常用词没必要浪费 AI token）
+            if entry.commit_count > skip_high_freq:
+                continue
+
+            candidates.append(entry)
+
+        # 按最后提交时间倒序，若无时间按词长倒序（长词组更容易包含错别字）
+        candidates.sort(key=lambda x: (-x.last_commit_time, len(x.word), x.commit_count))
+        return candidates[:max_limit]
 
     def save_snapshot(self, snapshot_filepath: str, entries: Dict[Tuple[str, str], UserDbEntry]) -> None:
         """保存合并结果快照"""

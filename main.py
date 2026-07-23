@@ -50,26 +50,36 @@ def run_sync_and_optimize(config_path: str, mode: str):
         snapshot_file = os.path.join(snapshot_dir, f"{dict_name}_last_snapshot.userdb.txt")
 
         # 2. 根据模式执行 AI 调优
+        max_daily_ai_limit = rules.get("max_daily_ai_limit", 50)
+        skip_high_freq = rules.get("skip_high_freq_threshold", 50)
+
         if mode == "incremental":
-            # 抽取增量条目
-            incremental_entries = merger.get_incremental_entries(merged_entries, snapshot_file)
-            logging.info(f"抽取到 {len(incremental_entries)} 条增量词汇进行白天快速调优...")
+            # 漏斗筛选增量条目
+            incremental_entries = merger.get_incremental_entries(
+                merged_entries,
+                snapshot_file,
+                max_limit=max_daily_ai_limit,
+                skip_high_freq=skip_high_freq
+            )
+            logging.info(f"漏斗筛选后获取 {len(incremental_entries)} 条疑难/新增词汇交给 AI 分析...")
 
             if incremental_entries:
                 optimized_inc = optimizer.optimize_incremental(incremental_entries)
-                # 更新回合并数据字典
                 for opt_entry in optimized_inc:
                     key = (opt_entry.word, opt_entry.code)
                     merged_entries[key] = opt_entry
 
         elif mode == "deep":
-            # 抽取深度调优候选词
-            candidates = merger.get_deep_candidates(merged_entries, max_count=50)
-            logging.info(f"抽取到 {len(candidates)} 条候选词进行晚间深度调优...")
+            # 漏斗筛选深度疑难候选词
+            candidates = merger.get_deep_candidates(
+                merged_entries,
+                max_limit=max_daily_ai_limit,
+                skip_high_freq=skip_high_freq
+            )
+            logging.info(f"漏斗筛选后获取 {len(candidates)} 条疑难候选词交给 AI 深度分析...")
 
             if candidates:
                 optimized_deep = optimizer.optimize_deep(candidates)
-                # 更新回合并数据字典
                 for opt_entry in optimized_deep:
                     key = (opt_entry.word, opt_entry.code)
                     merged_entries[key] = opt_entry
