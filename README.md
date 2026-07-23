@@ -4,6 +4,15 @@
 
 ---
 
+## 🚀 最新版本更新 (v1.1.0)
+
+- ⚡ **AI 上下文与性能极速优化**：引入**规则漏斗预筛选算法**，自动过滤单字与高频稳定词，仅提取真正的疑难/新增词条交给 AI。
+- 📦 **微批次切片 (Micro-Batching)**：单次发送给 AI 的批次收敛至 `15 条/批`，绝不超出 AI Agent 上下文 Token 限制。
+- 🛡️ **调优上限配额与 Payload 压缩**：新增 `max_daily_ai_limit` 保护配额，压缩 Prompt JSON 传输字段，在 Armbian 弱性能服务器上也能秒级响应。
+- 🔧 **Windows 客户端同步指引更新**：补充了关于 `installation.custom.yaml` 与 WebDAV 挂载盘路径设置注意事项。
+
+---
+
 ## 🌟 核心特性
 
 1. **零额外 WebDAV 资源消耗**：直接适配您服务端已有的 WebDAV 服务，主服务无常驻内存开销。
@@ -42,11 +51,13 @@ Rime_aisync_project/
   "dist_dir": "/var/webdav/rime/sync/dist",
   "backup_dir": "/var/webdav/rime/backups",
   "opencode_bin": "opencode",
-  "dict_names": ["rime_ice", "luna_pinyin"],
+  "dict_names": ["rime_ice", "luna_pinyin", "custom_phrase"],
   "rules": {
     "min_freq_threshold": 1,
     "weight_decay": 0.9,
-    "max_ai_batch_size": 30
+    "max_ai_batch_size": 15,
+    "max_daily_ai_limit": 50,
+    "skip_high_freq_threshold": 50
   }
 }
 ```
