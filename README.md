@@ -97,13 +97,14 @@ bash install_cron.sh
 
 ## 📱 客户端配置指引 (Rime)
 
-1. **设置 `installation_id`**：
-   在各个客户端（Windows 小狼毫 / macOS 鼠须管 / Android 同文/仓）的 `default.custom.yaml` 中配置独立的 ID：
+1. **设置 `installation_id` 与 `sync_dir`**：
+   在各个客户端（Windows 小狼毫 / macOS 鼠须管 / Android 同文/仓）的 `installation.custom.yaml` 或 `default.custom.yaml` 中配置独立设备 ID 和统一同步路径：
    ```yaml
    patch:
-     "installation_id": "win-desktop"  # 移动端设为 "android-phone" 等
+     "installation_id": "win-office"    # 移动端设为 "android-phone" 等
+     "sync_dir": "Z:/rime/sync"         # WebDAV 挂载盘上的统一同步路径
    ```
 2. **WebDAV 同步**：
-   在各端输入法中开启 WebDAV 同步，同步路径设置为服务器的 WebDAV 根目录。
+   在各端输入法中开启 WebDAV 同步，小狼毫将自动在 `Z:\rime\sync\` 下生成以设备 ID 命名的子目录（例如 `Z:\rime\sync\win-office\`）。
 3. **加载公共调优词库**：
    客户端可通过 WebDAV 挂载读取分发目录 `dist/custom_phrase.txt` 放在本地 Rime 用户文件夹下，重新部署即可享受到 AI 优化后的高频词与新词！
